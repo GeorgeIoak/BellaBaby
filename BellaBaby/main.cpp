@@ -29,14 +29,14 @@
 
 // 8.0 MHz, calibrated internal 8 MHz oscillator
 
-#define LED_RED PA4
-#define LED_GREEN PA5
-#define LED_PWM PA7
-#define SWITCH PB2
+#define LED_RED PINA4
+#define LED_GREEN PINA5
+#define LED_PWM PINA7
+#define SWITCH PINB2
 
 ISR(PCINT0_vect) {
 	if (PINB & _BV(SWITCH))
-	PORTB ^= _BV(LED_GREEN);
+	PORTA ^= _BV(LED_GREEN);
 }
 
 void pwm_setup (void)
