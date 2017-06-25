@@ -26,7 +26,6 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
-#include "debounce.h"
 
 // 8.0 MHz, calibrated internal 8 MHz oscillator
 
@@ -35,18 +34,9 @@
 #define LED_PWM PINA7
 #define SWITCH PINB2
 
-ISR(INT0_vect) {
+ISR(PCINT0_vect) {
 	if (PINB & _BV(SWITCH))
 	PORTA ^= _BV(LED_GREEN);
-}
-
-// Called at about 100Hz (122Hz)
-ISR(TIM1_OVF_vect)
-{
-	// Debounce buttons. debounce() is declared static inline
-	// in debounce.h so we will not suffer from the added overhead
-	// of a (external) function call
-	debounce();
 }
 
 void pwm_setup (void)
@@ -70,9 +60,7 @@ void pwm_write (int val)
 
 void adc_setup (void)
 {
-	// Set the ADC input to PA1/ADC1
-	// ADC= (Vin * 1024) / Vref
-	ADMUX |= (1 << REFS); // Set Vref to 1.1V
+	// Set the ADC input to PB2/ADC1
 	ADMUX |= (1 << MUX0); //BatLevel on PA1
 	ADMUX |= (1 << ADLAR);
 
@@ -109,13 +97,6 @@ int main(void)
 	
 	GIMSK |= _BV(PCIE1);              // Enable PCINT interrupt
 
-	// Timer1 normal mode, presc 1:256
-	TCCR1B = 1<<CS12;
-	// Overflow interrupt. (at 8e6/256/256 = 122 Hz)
-	TIMSK = 1<<TOIE0;
-
-	debounce_init();
-
 	sei();  	                      // Global interrupts
 
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -126,7 +107,7 @@ int main(void)
 
 		// Update Output Compare Register (PWM 0-100%)
 		for (int i = 0; i < 255 ; i++ ){
-			OCR0B = i;
+			OCR0B = 1;
 			_delay_ms(5);
 		}
 
@@ -136,12 +117,6 @@ int main(void)
 			_delay_ms(5);
 		}
 		//pwm_write(adc_in);
-
-		if (button_down(BUTTON1_MASK))
-		{
-			// Toggle PA5
-			PORTA ^= 1<<LED_GREEN;
-		}
     }
 }
 
